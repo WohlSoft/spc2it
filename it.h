@@ -18,6 +18,7 @@ void ITMix();
 
 #define FINE_SLIDE 0xF0
 #define EXTRA_FINE_SLIDE 0xE0
+#define EFFECT_X 24
 #define EFFECT_F 6
 #define EFFECT_E 5
 
@@ -29,5 +30,6 @@ void ITMix();
 #define IT_MASK_ADJUSTVOLUME 4 // 0100 (volume/panning)
 #define IT_MASK_NOTE_SAMPLE_ADJUSTVOLUME (IT_MASK_NOTE | IT_MASK_SAMPLE | IT_MASK_ADJUSTVOLUME)
 #define IT_MASK_PITCHSLIDE 8 // 1000 (some special command, we use effect F and effect E)
+#define IT_MASK_ADJUSTPAN 16 // 10000 change the note panning
 
 #endif

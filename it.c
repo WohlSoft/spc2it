@@ -256,7 +256,7 @@ static void ITWritePattern(ITPatternInfo *pInfo) {
 		ITpattbuf[ITcurbuf][ITbufpos++] = pInfo->Sample;
 	if (pInfo->Mask & IT_MASK_ADJUSTVOLUME) 
 		ITpattbuf[ITcurbuf][ITbufpos++] = pInfo->Volume;
-	if (pInfo->Mask & IT_MASK_PITCHSLIDE) 
+	if (pInfo->Mask & IT_MASK_PITCHSLIDE)
 	{
 		ITpattbuf[ITcurbuf][ITbufpos++] = pInfo->Command;
 		ITpattbuf[ITcurbuf][ITbufpos++] = pInfo->CommandValue;
@@ -400,12 +400,10 @@ s32 ITWrite(char *fn) // Write the final IT file
 	fHeader->InitialTempo = (u8)(SPCUpdateRate * 2.5); // Initial tempo (determined by update rate)
 	fHeader->PanningSeperation = 128; // Stereo separation (max)
 	for (i = 0; i < 8; i++) 
-		fHeader->ChannelPan[i] = 0; // Channel pan: Set 8 channels to left
-	for (i = 8; i < 16; i++) 
-		fHeader->ChannelPan[i] = 64; // Set 8 channels to right
-	for (i = 16; i < 64; i++) 
+		fHeader->ChannelPan[i] = 32; // Channel pan: Set 8 channels to left
+	for (i = 8; i < 64; i++)
 		fHeader->ChannelPan[i] = 128; // Disable the rest of the channels (Value: +128)
-	for (i = 0; i < 16; i++) 
+	for (i = 0; i < 8; i++)
 		fHeader->ChannelVolume[i] = 64; // Channel Vol: set 16 channels loud
 	fwrite(fHeader, sizeof(ITFileHeader), 1, f);
 	free(fHeader);
@@ -476,20 +474,27 @@ void ITMix()
 			// adjust volume?
 			if ((lvol != ITdata[voice].lvol) || (rvol != ITdata[voice].rvol))
 			{
-				ITdata[voice].mask |= IT_MASK_ADJUSTVOLUME; // Enable adjust volume
+				if (lvol + rvol != ITdata[voice].lvol + ITdata[voice].rvol)
+					ITdata[voice].mask |= IT_MASK_ADJUSTVOLUME; // Enable adjust volume
+				if (ITdata[voice].lvol * (lvol + rvol + 1) / (ITdata[voice].lvol + ITdata[voice].rvol + 1) != lvol
+					|| ITdata[voice].rvol * (lvol + rvol + 1) / (ITdata[voice].lvol + ITdata[voice].rvol + 1) != rvol)
+				{
+					ITdata[voice].mask |= IT_MASK_ADJUSTPAN; // Enable adjust panning
+				}
+
 				ITdata[voice].lvol = lvol;
 				ITdata[voice].rvol = rvol;
 			}
 		}
 
 		pInfo->Channel = (voice + 1) | 128; //Channels here are 1 based!
-		pInfo->Mask = ITdata[voice].mask;
+		pInfo->Mask = ITdata[voice].mask & ~IT_MASK_ADJUSTPAN;
+
 		if (ITdata[voice].mask & IT_MASK_NOTE)
 			pInfo->Note = ITdata[voice].note;
 		if (ITdata[voice].mask & IT_MASK_SAMPLE)
 			pInfo->Sample = SPC_DSP[(voice << 4) + 4] + 1;
-		if (ITdata[voice].mask & IT_MASK_ADJUSTVOLUME)
-			pInfo->Volume = (lvol > 64) ? 64 : lvol;
+
 		if (ITdata[voice].mask & IT_MASK_PITCHSLIDE)
 		{
 			if (pitchslide > 0xF)
@@ -527,13 +532,22 @@ void ITMix()
 				pInfo->CommandValue = temp;
 			}
 		}
-		ITWritePattern(pInfo); // Write for left channel
-		pInfo->Channel = (voice + 8 + 1) | 128;
-		if (ITdata[voice].mask & IT_MASK_ADJUSTVOLUME)
-			pInfo->Volume = (rvol > 64) ? 64 : rvol;
-		ITWritePattern(pInfo); // Write for right channel
+		else if (ITdata[voice].mask & IT_MASK_ADJUSTPAN)
+		{
+			pInfo->Command = EFFECT_X;
+			pInfo->CommandValue = 256 * ITdata[voice].rvol / (ITdata[voice].lvol + ITdata[voice].rvol + 1);
+			pInfo->Mask |= IT_MASK_PITCHSLIDE;
+			ITdata[voice].mask &= ~IT_MASK_ADJUSTPAN;
+		}
 
-		ITdata[voice].mask = 0; // Clear the mask 
+		if (ITdata[voice].mask & IT_MASK_ADJUSTVOLUME)
+		{
+			pInfo->Volume = ((lvol + rvol) > 64) ? 64 : (lvol + rvol);
+		}
+
+		ITWritePattern(pInfo); // Write for left (only?) channel
+
+		ITdata[voice].mask &= IT_MASK_ADJUSTPAN; // Clear the mask
 	}
 	ITpattbuf[ITcurbuf][ITbufpos++] = 0; // End-of-row
 	if (++ITcurrow >= ITrows)
