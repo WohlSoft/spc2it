@@ -351,12 +351,12 @@ s32 ITWrite(char *fn) // Write the final IT file
 	pInfo->Mask = 1;
 	pInfo->Note = 254; //note cut
 	// Stop all notes and loop back to the beginning
-	for (i = 0; i < 15; i++) // Save the last channel to put loop in
+	for (i = 0; i < 7; i++) // Save the last channel to put loop in
 	{
 		pInfo->Channel = (i + 1) | 128; // Channels are 1 based (Channels start at 1, not 0, ITTECH.TXT is WRONG) !!!
 		ITWritePattern(pInfo);
 	}
-	pInfo->Channel = (15 + 1) | 128;
+	pInfo->Channel = (7 + 1) | 128;
 	pInfo->Mask = 9; // 1001 (note, special command)
 	pInfo->Command = 2; // Effect B: jump to...
 	pInfo->CommandValue = 0; //...order 0 (Loop to beginning)
