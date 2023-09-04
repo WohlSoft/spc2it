@@ -159,11 +159,23 @@ static void ITWriteDSPCallback(u8 v)
 {
 	s32 addr_lo = SPC_DSP_ADDR & 0xF;
 	s32 addr_hi = SPC_DSP_ADDR >> 4;
+
+	// fix "missing first note" by accepting a slightly different DSP state on first row
 	if (!(addr_lo == 12))
-		return;
+	{
+		if (TotalCycles > 100)
+			return;
+		else
+			printf("Warning: accepting low address %u at cycle %u\n", (unsigned)addr_lo, (unsigned)TotalCycles);
+	}
 
 	if (!(addr_hi == 4))
-		return;
+	{
+		if (TotalCycles > 100)
+			return;
+		else
+			printf("Warning: accepting high address %u at cycle %u\n", (unsigned)addr_hi, (unsigned)TotalCycles);
+	}
 
 	s32 i, cursamp, pitch;
 	v &= 0xFF; // ext
