@@ -400,11 +400,11 @@ s32 ITWrite(char *fn) // Write the final IT file
 	fHeader->InitialTempo = (u8)(SPCUpdateRate * 2.5); // Initial tempo (determined by update rate)
 	fHeader->PanningSeperation = 128; // Stereo separation (max)
 	for (i = 0; i < 8; i++) 
-		fHeader->ChannelPan[i] = 32; // Channel pan: Set 8 channels to left
+		fHeader->ChannelPan[i] = 32; // Channel pan: Set 8 channels to center
 	for (i = 8; i < 64; i++)
 		fHeader->ChannelPan[i] = 128; // Disable the rest of the channels (Value: +128)
 	for (i = 0; i < 8; i++)
-		fHeader->ChannelVolume[i] = 64; // Channel Vol: set 16 channels loud
+		fHeader->ChannelVolume[i] = 64; // Channel Vol: set 8 channels loud
 	fwrite(fHeader, sizeof(ITFileHeader), 1, f);
 	free(fHeader);
 	// orders
