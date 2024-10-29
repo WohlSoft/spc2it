@@ -12,7 +12,7 @@ extern u8 SPCRAM[65536];
 extern u32 SPC_DSP_DATA;
 
 extern s32 SPCtime;
-extern SPCFileInformation *SPCInfo;
+extern SPCFileInformation SPCInfo;
 extern void (*SPC_Write_DSP_Hook)(u8);
 
 #define SPCUpdateRate 100

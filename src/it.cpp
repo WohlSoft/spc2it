@@ -393,8 +393,8 @@ s32 ITWrite(char *fn) // Write the final IT file
 		exit(1);
 	}
 	memcpy(fHeader->magic, "IMPM", 4);
-	if (SPCInfo->SongTitle[0])
-		strncpy(fHeader->songName, SPCInfo->SongTitle, 25);
+	if (SPCInfo.SongTitle[0])
+		strncpy(fHeader->songName, SPCInfo.SongTitle, 25);
 	else
 		strcpy(fHeader->songName, "spc2it conversion"); // default string
 	fHeader->OrderNumber = curpatt + 1; // number of orders + terminating order
@@ -445,6 +445,18 @@ s32 ITWrite(char *fn) // Write the final IT file
 	fwrite(ITPatterns, ITPatternsSize, 1, f);
 	for (i = 0; i < NUM_PATT_BUFS; i++)
 		free(ITpattbuf[i]);
+
+	for (i = 0; i < numsamps; i++)
+	{
+		if (!ITSamples[i])
+			continue;
+
+		free(ITSamples[i]->buf);
+		free(ITSamples[i]);
+
+		ITSamples[i] = NULL;
+	}
+
 	free(ITPatterns);
 	fclose(f);
 	return 0;

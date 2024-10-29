@@ -121,11 +121,11 @@ int main(int argc, char **argv)
 	printf("    Rows/pattern:    %d\n", ITrows);
 
 	printf("ID info:\n");
-	printf("        Song:  %s\n", SPCInfo->SongTitle);
-	printf("        Game:  %s\n", SPCInfo->GameTitle);
-	printf("      Dumper:  %s\n", SPCInfo->DumperName);
-	printf("    Comments:  %s\n", SPCInfo->Comment);
-	printf("  Created on:  %s\n", SPCInfo->Date);
+	printf("        Song:  %s\n", SPCInfo.SongTitle);
+	printf("        Game:  %s\n", SPCInfo.GameTitle);
+	printf("      Dumper:  %s\n", SPCInfo.DumperName);
+	printf("    Comments:  %s\n", SPCInfo.Comment);
+	printf("  Created on:  %s\n", SPCInfo.Date);
 
 	printf("\n");
 

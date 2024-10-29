@@ -26,7 +26,7 @@ void (*SPC_Write_DSP_Hook)(u8); // function pointer
 
 // ID tag stuff
 s32 SPCtime;
-SPCFileInformation *SPCInfo;
+SPCFileInformation SPCInfo;
 
 static s32 LoadZState(char *fn)
 {
@@ -62,18 +62,9 @@ static s32 LoadZState(char *fn)
 	memcpy(SPCRAM, sFile->RAM, 65536);
 	memcpy(SPC_DSP, sFile->DSPBuffer, 128);
 
-	if (SPCInfo == NULL)
-		SPCInfo = (SPCFileInformation*) calloc(1, sizeof(SPCFileInformation));
-
-	if (SPCInfo == NULL)
-	{
-		printf("Error: could not allocate memory for SPCInfo struct\n");
-		exit(1);
-	}
-
-	memcpy(SPCInfo, &sFile->Information, sizeof(SPCFileInformation));
+	memcpy(&SPCInfo, &sFile->Information, sizeof(SPCFileInformation));
 	char songLen[4];
-	strncpy(songLen, SPCInfo->SongLength, 3);
+	strncpy(songLen, SPCInfo.SongLength, 3);
 
 	if (songLen[0] >= 0)
 		SPCtime = atoi(songLen);
