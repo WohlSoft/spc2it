@@ -12,7 +12,7 @@
 s32 ITStart(s32); // Opens temp file, inits writing
 s32 ITUpdate(); // Dumps pattern buffers to file
 s32 ITWrite(char *fn); // Stops recording and writes IT file from temp data
-void ITMix();
+int ITMix();
 
 // Macros
 

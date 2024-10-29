@@ -112,7 +112,7 @@ extern SPC700_CONTEXT *active_context;
 /* SPCimpl.c procedures */
 void DisplaySPC(void);
 
-void InvalidSPCOpcode(void);
+// void InvalidSPCOpcode(void);
 
 void SPC_READ_DSP(void);
 
@@ -123,7 +123,7 @@ void Reset_SPC(void);
 
 u8 SPC_READ_PORT_W(u16 address);
 
-void SPC_START(u32 cycles);
+int SPC_START(u32 cycles);
 
 void SPC_WRITE_PORT_R(u16 address, u8 data);
 

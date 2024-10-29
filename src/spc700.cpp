@@ -1643,7 +1643,7 @@ void single_step_end(void)
 	(dest) = (src);                                                                                                    \
 	END_OPCODE(1)
 
-static void Execute_SPC(void)
+static int Execute_SPC(void)
 {
 	u8 was_in_cpu = In_CPU;
 	In_CPU = 0;
@@ -3479,7 +3479,8 @@ static void Execute_SPC(void)
 			/* Adjust address to correct for increment */
 			Map_Address = (_PC - 1) & 0xFFFF;
 			save_cycles_spc();  /* Set cycle counter */
-			InvalidSPCOpcode(); /* This exits.. aviods conflict with other things! */
+			/* InvalidSPCOpcode(); This exits.. aviods conflict with other things! */
+			return 1;
 			load_cycles_spc();
 			break;
 		}
@@ -3498,9 +3499,11 @@ static void Execute_SPC(void)
 #endif
 
 	In_CPU = was_in_cpu;
+
+	return 0;
 }
 
-void SPC_START(u32 cycles)
+int SPC_START(u32 cycles)
 {
 	u64 temp = cycles;
 	temp = (temp * SPC_CPU_cycle_multiplicand) + SPC_CPU_cycles_mul;
@@ -3516,11 +3519,11 @@ void SPC_START(u32 cycles)
 	if (_Cycles <= _TotalCycles)
 	{
 		if ((s32)_Cycles < 0)
-			return;
+			return 0;
 		if ((s32)_TotalCycles >= 0)
-			return;
+			return 0;
 		Wrap_SPC_Cyclecounter();
 	}
 
-	Execute_SPC();
+	return Execute_SPC();
 }

@@ -207,7 +207,7 @@ static void ITWriteDSPCallback(u8 v)
 	}
 }
 
-static void ITSSave(sndsamp *s, FILE *f) // Save sample
+static int ITSSave(sndsamp *s, FILE *f) // Save sample
 {
 	s32 loopto = -1;
 	s32 length = 0;
@@ -216,8 +216,8 @@ static void ITSSave(sndsamp *s, FILE *f) // Save sample
 	ITFileSample *sHeader = (ITFileSample *)calloc(1, sizeof(ITFileSample));
 	if (sHeader == NULL)
 	{
-		printf("Error: could not allocate memory for ITFileSample struct\n");
-		exit(1);
+		// printf("Error: could not allocate memory for ITFileSample struct\n");
+		return(1);
 	}
 	if (s != NULL)
 	{
@@ -256,6 +256,8 @@ static void ITSSave(sndsamp *s, FILE *f) // Save sample
 	free(sHeader);
 	if (length)
 		fwrite(s->buf, s->length * 2, 1, f); // Write the sample itself... 2x length.
+
+	return 0;
 }
 
 static void ITWritePattern(ITPatternInfo *pInfo) {
@@ -286,8 +288,8 @@ s32 ITStart(s32 rows) // Opens up temporary file and inits writing
 		ITpattbuf[i] = (u8 *)calloc(1, Mem64k - 8); //Don't include the 8 byte header
 		if (ITpattbuf[i] == NULL)
 		{
-			printf("Error: could not allocate memory for IT pattern buffer\n");
-			exit(1);
+			// printf("Error: could not allocate memory for IT pattern buffer\n");
+			return(1);
 		}
 		ITpattlen[i] = 0;
 	}
@@ -295,8 +297,8 @@ s32 ITStart(s32 rows) // Opens up temporary file and inits writing
 	ITPatterns = (u8 *)calloc(1, Mem64k * IT_PATTERN_MAX);
 	if (ITPatterns == NULL)
 	{
-		printf("Error: could not allocate memory for IT pattern storage\n");
-		exit(1);
+		// printf("Error: could not allocate memory for IT pattern storage\n");
+		return(1);
 	}
 	ITPatternsSize = 0;
 	ITcurbuf = 0;
@@ -320,8 +322,8 @@ s32 ITUpdate() // Dumps pattern buffers to file
 	ITFilePattern *pHeader = (ITFilePattern *)calloc(1, sizeof(ITFilePattern));
 	if (pHeader == NULL)
 	{
-		printf("Error: could not allocate memory for ITFilePattern struct\n");
-		exit(1);
+		// printf("Error: could not allocate memory for ITFilePattern struct\n");
+		return(1);
 	}
 	for (i = 0; i < ITcurbuf; i++)
 	{
@@ -346,20 +348,28 @@ s32 ITUpdate() // Dumps pattern buffers to file
 
 s32 ITWrite(char *fn) // Write the final IT file
 {
-	FILE *f;
-	s32 i, t, numsamps, ofs;
-	ITPatternInfo *pInfo = (ITPatternInfo *)calloc(1, sizeof(ITPatternInfo));
-	if (pInfo == NULL)
-	{
-		printf("Error: could not allocate memory for ITPatternInfo struct\n");
-		exit(1);
-	}
-	// START IT CLEANUP
+	s32 ret = 0;
+
 	if (fn == NULL)
 	{
-		printf("Error: no IT filename\n");
-		exit(1);
+		// printf("Error: no IT filename\n");
+		ret = 1;
+		goto cleanup;
 	}
+
+	FILE *f;
+	s32 i, t, numsamps, ofs;
+
+	ITPatternInfo *pInfo;
+	pInfo = (ITPatternInfo *)calloc(1, sizeof(ITPatternInfo));
+	if (pInfo == NULL)
+	{
+		// printf("Error: could not allocate memory for ITPatternInfo struct\n");
+		ret = 1;
+		goto cleanup;
+	}
+
+	// START IT CLEANUP
 	pInfo->Mask = 1;
 	pInfo->Note = 254; //note cut
 	// Stop all notes and loop back to the beginning
@@ -374,24 +384,27 @@ s32 ITWrite(char *fn) // Write the final IT file
 	pInfo->CommandValue = 0; //...order 0 (Loop to beginning)
 	ITWritePattern(pInfo);
 	free(pInfo);
+
 	while (ITcurrow++ < ITrows)
 		ITpattbuf[ITcurbuf][ITbufpos++] = 0; // end-of-row
 
 	ITpattlen[ITcurbuf++] = ITbufpos;
-	ITUpdate(); // Save the changes we just made
-	// END IT CLEANUP
-	f = fopen(fn, "wb");
-	if (f == NULL)
+	if (ITUpdate()) // Save the changes we just made
 	{
-		printf("Error: could not open IT file\n");
-		exit(1);
+		ret = 1;
+		goto cleanup;
 	}
-	ITFileHeader *fHeader = (ITFileHeader *)calloc(1, sizeof(ITFileHeader));
+	// END IT CLEANUP
+
+	ITFileHeader *fHeader;
+	fHeader = (ITFileHeader *)calloc(1, sizeof(ITFileHeader));
 	if (fHeader == NULL)
 	{
-		printf("Error: could not allocate memory for ITFileHeader struct\n");
-		exit(1);
+		// printf("Error: could not allocate memory for ITFileHeader struct\n");
+		ret = 1;
+		goto cleanup;
 	}
+
 	memcpy(fHeader->magic, "IMPM", 4);
 	if (SPCInfo.SongTitle[0])
 		strncpy(fHeader->songName, SPCInfo.SongTitle, 25);
@@ -417,12 +430,25 @@ s32 ITWrite(char *fn) // Write the final IT file
 		fHeader->ChannelPan[i] = 128; // Disable the rest of the channels (Value: +128)
 	for (i = 0; i < 8; i++)
 		fHeader->ChannelVolume[i] = 64; // Channel Vol: set 8 channels loud
+
+	f = fopen(fn, "wb");
+	if (f == NULL)
+	{
+		// printf("Error: could not open IT file\n");
+		free(fHeader);
+		ret = 1;
+		goto cleanup;
+	}
+
+	// header
 	fwrite(fHeader, sizeof(ITFileHeader), 1, f);
 	free(fHeader);
+
 	// orders
 	for (i = 0; i < curpatt; i++)
 		fputc(i, f); // Write from 0 to the number of patterns (max: 0xFD)
 	fputc(255, f); // terminating order
+
 	// Sample offsets
 	ofs = sizeof(ITFileHeader) + (curpatt + 1) + ((numsamps * sizeof(s32)) + (curpatt * sizeof(s32)));
 	for (i = 0; i < numsamps; i++)
@@ -432,19 +458,38 @@ s32 ITWrite(char *fn) // Write the final IT file
 		if (ITSamples[i] != NULL) // Sample is going to be put in file? Add the length of the sample.
 			ofs += (ITSamples[i]->length * 2);
 	}
+
 	// Pattern offsets
 	for (i = 0; i < curpatt; i++)
 	{
 		t = offset[i] + ofs;
 		fwrite(&t, sizeof(s32), 1, f);
 	}
+
 	// samples
 	for (i = 0; i < numsamps; i++)
-		ITSSave(ITSamples[i], f);
+	{
+		if (ITSSave(ITSamples[i], f))
+		{
+			ret = 1;
+			fclose(f);
+			goto cleanup;
+		}
+	}
+
 	// patterns
 	fwrite(ITPatterns, ITPatternsSize, 1, f);
+
+	// close file
+	fclose(f);
+
+cleanup:
+	// generic cleanup that must occur in any case
 	for (i = 0; i < NUM_PATT_BUFS; i++)
+	{
 		free(ITpattbuf[i]);
+		ITpattbuf[i] = NULL;
+	}
 
 	for (i = 0; i < numsamps; i++)
 	{
@@ -458,18 +503,18 @@ s32 ITWrite(char *fn) // Write the final IT file
 	}
 
 	free(ITPatterns);
-	fclose(f);
-	return 0;
+	ITPatterns = NULL;
+	return ret;
 }
 
-void ITMix()
+int ITMix()
 {
 	s32 envx, pitchslide, lvol = 0, rvol = 0, pitch, temp = 0, voice;
 	ITPatternInfo *pInfo = (ITPatternInfo *)calloc(1, sizeof(ITPatternInfo));
 	if (pInfo == NULL)
 	{
-		printf("Error: could not allocate memory for ITPatternInfo struct\n");
-		exit(1);
+		// printf("Error: could not allocate memory for ITPatternInfo struct\n");
+		return(1);
 	}
 	u8 mastervolume = SPC_DSP[0x0C];
 	for (voice = 0; voice < 8; voice++)
@@ -581,4 +626,6 @@ void ITMix()
 		ITcurrow = 0; // Reset current row
 	}
 	free(pInfo);
+
+	return 0;
 }

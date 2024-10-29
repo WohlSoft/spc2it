@@ -90,24 +90,24 @@ int main(int argc, char **argv)
 		printf("-t x        Specify a time limit in seconds        [60 default]\n");
 		printf("          -d xxxxxxxx Voices to disable (1-8)                [none default]\n");
 		printf("          -r xxx      Specify IT rows per pattern            [200 default]\n");
-		exit(0);
+		return(0);
 	}
 	printf("\n");
 	printf("Filepath:            %s\n", fn);
 	if (ITStart(ITrows))
 	{
 		printf("Error: failed to initialize pattern buffers\n");
-		exit(1);
+		return(1);
 	}
 	if (SPCInit(fn)) // Reset SPC and load state
 	{
 		printf("Error: failed to initialize emulation\n");
-		exit(1);
+		return(1);
 	}
 	if (SNDInit())
 	{
 		printf("Error: failed to initialize sound\n");
-		exit(1);
+		return(1);
 	}
 
 	if ((!limit) && (SPCtime))
@@ -133,14 +133,25 @@ int main(int argc, char **argv)
 
 	SNDNoteOn(SPC_DSP[0x4c]);
 
+	int success = 1;
 	seconds = SNDratecnt = 0;
 	while (true)
 	{
-		ITMix();
-		if (ITUpdate())
+		if (ITMix() || ITUpdate())
+		{
+			success = 0;
 			break;
+		}
+
 		SNDratecnt += 1;
-		SPC_START(2048000 / (SPCUpdateRate * 2)); // emulate the SPC700
+
+		int ret = SPC_START(2048000 / (SPCUpdateRate * 2)); // emulate the SPC700
+
+		if (ret)
+		{
+			success = 0;
+			break;
+		}
 
 		if (SNDratecnt >= SPCUpdateRate)
 		{
@@ -153,19 +164,23 @@ int main(int argc, char **argv)
 		}
 	}
 	printf("\n\nSaving file...\n");
+
 	for (i = 0; i < PATH_MAX; i++)
 		if (fn[i] == 0)
 			break;
+
 	for (; i > 0; i--)
 		if (fn[i] == '.')
 		{
 			strcpy(&fn[i + 1], "it");
 			break;
 		}
-	if (ITWrite(fn))
+	if (!success || ITWrite(fn))
 		printf("Error: failed to write %s.\n", fn);
 	else
 		printf("Wrote to %s successfully.\n", fn);
+
 	Reset_SPC();
-	return 0;
+
+	return !success;
 }

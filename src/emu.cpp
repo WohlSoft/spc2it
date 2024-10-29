@@ -33,15 +33,15 @@ static s32 LoadZState(char *fn)
 	SPCFile *sFile = (SPCFile *)calloc(1, sizeof(SPCFile));
 	if (sFile == NULL)
 	{
-		printf("Error: could not allocate memory for SPCFile struct\n");
-		exit(1);
+		// printf("Error: could not allocate memory for SPCFile struct\n");
+		return(1);
 	}
 
 	FILE *f = fopen(fn, "rb");
 	if (f == NULL)
 	{
-		printf("Error: can't open file\n");
-		exit(1);
+		// printf("Error: can't open file\n");
+		return(1);
 	}
 	fseek(f, 0, SEEK_SET);
 	fread(sFile, sizeof(SPCFile), 1, f);
@@ -49,8 +49,8 @@ static s32 LoadZState(char *fn)
 
 	if (strncmp("SNES-SPC700 Sound File Data", sFile->FileTag, 27))
 	{
-		printf("Error: invalid file format\n");
-		exit(1);
+		// printf("Error: invalid file format\n");
+		return(1);
 	}
 
 	memcpy(&active_context->PC.w, sFile->Registers.PC, 2);
@@ -114,10 +114,12 @@ void DisplaySPC()
 {
 }
 
+/*
 void InvalidSPCOpcode()
 {
 	exit(-1);
 }
+*/
 
 void SPC_READ_DSP()
 {
