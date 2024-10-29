@@ -30,12 +30,13 @@ SPCFileInformation *SPCInfo;
 
 static s32 LoadZState(char *fn)
 {
-	SPCFile *sFile = calloc(1, sizeof(SPCFile));
+	SPCFile *sFile = (SPCFile *)calloc(1, sizeof(SPCFile));
 	if (sFile == NULL)
 	{
 		printf("Error: could not allocate memory for SPCFile struct\n");
 		exit(1);
 	}
+
 	FILE *f = fopen(fn, "rb");
 	if (f == NULL)
 	{
@@ -45,11 +46,13 @@ static s32 LoadZState(char *fn)
 	fseek(f, 0, SEEK_SET);
 	fread(sFile, sizeof(SPCFile), 1, f);
 	fclose(f);
+
 	if (strncmp("SNES-SPC700 Sound File Data", sFile->FileTag, 27))
 	{
 		printf("Error: invalid file format\n");
 		exit(1);
 	}
+
 	memcpy(&active_context->PC.w, sFile->Registers.PC, 2);
 	active_context->YA.b.l = sFile->Registers.A;
 	active_context->X = sFile->Registers.X;
@@ -58,21 +61,28 @@ static s32 LoadZState(char *fn)
 	active_context->PSW = sFile->Registers.PSW;
 	memcpy(SPCRAM, sFile->RAM, 65536);
 	memcpy(SPC_DSP, sFile->DSPBuffer, 128);
-	SPCInfo = calloc(1, sizeof(SPCFileInformation));
+
+	if (SPCInfo == NULL)
+		SPCInfo = (SPCFileInformation*) calloc(1, sizeof(SPCFileInformation));
+
 	if (SPCInfo == NULL)
 	{
 		printf("Error: could not allocate memory for SPCInfo struct\n");
 		exit(1);
 	}
+
 	memcpy(SPCInfo, &sFile->Information, sizeof(SPCFileInformation));
 	char songLen[4];
 	strncpy(songLen, SPCInfo->SongLength, 3);
+
 	if (songLen[0] >= 0)
 		SPCtime = atoi(songLen);
 	else
 		SPCtime = 0;
+
 	if (0 == (SPC_CTRL & 0x80))
 		active_context->FFC0_Address = SPCRAM;
+
 	active_context->timers[0].target = (u8)(SPCRAM[0xFA] - 1) + 1;
 	active_context->timers[1].target = (u8)(SPCRAM[0xFB] - 1) + 1;
 	active_context->timers[2].target = (u8)(SPCRAM[0xFC] - 1) + 1;

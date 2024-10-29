@@ -28,7 +28,7 @@ static s32 curoffs; // where we are in file
 static sndsamp *ITAllocateSample(s32 size)
 {
 	sndsamp *s;
-	if (((s = calloc(1, sizeof(sndsamp))) == NULL) || ((s->buf = calloc(1, size * 2)) == NULL))
+	if (((s = (sndsamp *)calloc(1, sizeof(sndsamp))) == NULL) || ((s->buf = (s16 *)calloc(1, size * sizeof(s16))) == NULL))
 		return (NULL);
 	s->length = size;
 	s->loopto = -1;
@@ -124,12 +124,12 @@ static s32 ITDecodeSample(u16 start, sndsamp **sp)
 static void ITUpdateSample(s32 s)
 {
 	s32 i;
-	struct
+	struct srcdir_s
 	{
 		u16 vptr, lptr;
 	} *SRCDIR;
 	i = SPC_DSP[0x5D] << 8; //sample directory table...
-	SRCDIR = (void *)&SPCRAM[i];
+	SRCDIR = (srcdir_s *)(void *)&SPCRAM[i];
 	if (ITDecodeSample(SRCDIR[s].vptr, &ITSamples[s]))
 		return;
 	if (ITSamples[s]->loopto != -1)
@@ -213,7 +213,7 @@ static void ITSSave(sndsamp *s, FILE *f) // Save sample
 	s32 length = 0;
 	s32 freq = 0;
 	s32 ofs = ftell(f);
-	ITFileSample *sHeader = calloc(1, sizeof(ITFileSample));
+	ITFileSample *sHeader = (ITFileSample *)calloc(1, sizeof(ITFileSample));
 	if (sHeader == NULL)
 	{
 		printf("Error: could not allocate memory for ITFileSample struct\n");
@@ -283,7 +283,7 @@ s32 ITStart(s32 rows) // Opens up temporary file and inits writing
 
 	for (i = 0; i < NUM_PATT_BUFS; i++)
 	{
-		ITpattbuf[i] = calloc(1, Mem64k - 8); //Don't include the 8 byte header
+		ITpattbuf[i] = (u8 *)calloc(1, Mem64k - 8); //Don't include the 8 byte header
 		if (ITpattbuf[i] == NULL)
 		{
 			printf("Error: could not allocate memory for IT pattern buffer\n");
@@ -292,7 +292,7 @@ s32 ITStart(s32 rows) // Opens up temporary file and inits writing
 		ITpattlen[i] = 0;
 	}
 
-	ITPatterns = calloc(1, Mem64k * IT_PATTERN_MAX);
+	ITPatterns = (u8 *)calloc(1, Mem64k * IT_PATTERN_MAX);
 	if (ITPatterns == NULL)
 	{
 		printf("Error: could not allocate memory for IT pattern storage\n");
@@ -317,7 +317,7 @@ s32 ITUpdate() // Dumps pattern buffers to file
 {
 	u8 *tmpptr;
 	s32 i;
-	ITFilePattern *pHeader = calloc(1, sizeof(ITFilePattern));
+	ITFilePattern *pHeader = (ITFilePattern *)calloc(1, sizeof(ITFilePattern));
 	if (pHeader == NULL)
 	{
 		printf("Error: could not allocate memory for ITFilePattern struct\n");
@@ -348,7 +348,7 @@ s32 ITWrite(char *fn) // Write the final IT file
 {
 	FILE *f;
 	s32 i, t, numsamps, ofs;
-	ITPatternInfo *pInfo = calloc(1, sizeof(ITPatternInfo));
+	ITPatternInfo *pInfo = (ITPatternInfo *)calloc(1, sizeof(ITPatternInfo));
 	if (pInfo == NULL)
 	{
 		printf("Error: could not allocate memory for ITPatternInfo struct\n");
@@ -386,7 +386,7 @@ s32 ITWrite(char *fn) // Write the final IT file
 		printf("Error: could not open IT file\n");
 		exit(1);
 	}
-	ITFileHeader *fHeader = calloc(1, sizeof(ITFileHeader));
+	ITFileHeader *fHeader = (ITFileHeader *)calloc(1, sizeof(ITFileHeader));
 	if (fHeader == NULL)
 	{
 		printf("Error: could not allocate memory for ITFileHeader struct\n");
@@ -453,7 +453,7 @@ s32 ITWrite(char *fn) // Write the final IT file
 void ITMix()
 {
 	s32 envx, pitchslide, lvol = 0, rvol = 0, pitch, temp = 0, voice;
-	ITPatternInfo *pInfo = calloc(1, sizeof(ITPatternInfo));
+	ITPatternInfo *pInfo = (ITPatternInfo *)calloc(1, sizeof(ITPatternInfo));
 	if (pInfo == NULL)
 	{
 		printf("Error: could not allocate memory for ITPatternInfo struct\n");
