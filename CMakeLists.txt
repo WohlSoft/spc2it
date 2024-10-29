@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 3.5)
 project(spc2it)
 
 set(spc2it_sources
-	src/emu.cpp
-	src/it.cpp
-	src/main.cpp
-	src/sound.cpp
-	src/spc700.cpp
+	src/emu.c
+	src/it.c
+	src/main.c
+	src/sound.c
+	src/spc700.c
 
 	src/emu.h
 	src/it.h

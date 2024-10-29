@@ -129,7 +129,7 @@ static void ITUpdateSample(s32 s)
 		u16 vptr, lptr;
 	} *SRCDIR;
 	i = SPC_DSP[0x5D] << 8; //sample directory table...
-	SRCDIR = (srcdir_s *)(void *)&SPCRAM[i];
+	SRCDIR = (struct srcdir_s *)(void *)&SPCRAM[i];
 	if (ITDecodeSample(SRCDIR[s].vptr, &ITSamples[s]))
 		return;
 	if (ITSamples[s]->loopto != -1)
