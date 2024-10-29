@@ -28,7 +28,7 @@ void (*SPC_Write_DSP_Hook)(u8); // function pointer
 s32 SPCtime;
 SPCFileInformation SPCInfo;
 
-static s32 LoadZState(char *fn)
+static s32 LoadZState(const char *fn)
 {
 	SPCFile *sFile = (SPCFile *)calloc(1, sizeof(SPCFile));
 	if (sFile == NULL)
@@ -95,7 +95,7 @@ static s32 LoadZState(char *fn)
 
 // PUBLIC (non-static) functions
 
-s32 SPCInit(char *fn)
+s32 SPCInit(const char *fn)
 {
 	Reset_SPC();
 	if (LoadZState(fn))

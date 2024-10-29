@@ -346,15 +346,12 @@ s32 ITUpdate() // Dumps pattern buffers to file
 	return 0;
 }
 
-s32 ITWrite(char *fn) // Write the final IT file
+s32 ITWrite(const char *fn) // Write the final IT file
 {
-	s32 ret = 0;
-
 	if (fn == NULL)
 	{
 		// printf("Error: no IT filename\n");
-		ret = 1;
-		goto cleanup;
+		return 1;
 	}
 
 	FILE *f;
@@ -365,8 +362,7 @@ s32 ITWrite(char *fn) // Write the final IT file
 	if (pInfo == NULL)
 	{
 		// printf("Error: could not allocate memory for ITPatternInfo struct\n");
-		ret = 1;
-		goto cleanup;
+		return 1;
 	}
 
 	// START IT CLEANUP
@@ -390,10 +386,7 @@ s32 ITWrite(char *fn) // Write the final IT file
 
 	ITpattlen[ITcurbuf++] = ITbufpos;
 	if (ITUpdate()) // Save the changes we just made
-	{
-		ret = 1;
-		goto cleanup;
-	}
+		return 1;
 	// END IT CLEANUP
 
 	ITFileHeader *fHeader;
@@ -401,8 +394,7 @@ s32 ITWrite(char *fn) // Write the final IT file
 	if (fHeader == NULL)
 	{
 		// printf("Error: could not allocate memory for ITFileHeader struct\n");
-		ret = 1;
-		goto cleanup;
+		return 1;
 	}
 
 	memcpy(fHeader->magic, "IMPM", 4);
@@ -436,8 +428,7 @@ s32 ITWrite(char *fn) // Write the final IT file
 	{
 		// printf("Error: could not open IT file\n");
 		free(fHeader);
-		ret = 1;
-		goto cleanup;
+		return 1;
 	}
 
 	// header
@@ -471,9 +462,8 @@ s32 ITWrite(char *fn) // Write the final IT file
 	{
 		if (ITSSave(ITSamples[i], f))
 		{
-			ret = 1;
 			fclose(f);
-			goto cleanup;
+			return 1;
 		}
 	}
 
@@ -483,15 +473,19 @@ s32 ITWrite(char *fn) // Write the final IT file
 	// close file
 	fclose(f);
 
-cleanup:
+	return 0;
+}
+
+void ITCleanup()
+{
 	// generic cleanup that must occur in any case
-	for (i = 0; i < NUM_PATT_BUFS; i++)
+	for (int i = 0; i < NUM_PATT_BUFS; i++)
 	{
 		free(ITpattbuf[i]);
 		ITpattbuf[i] = NULL;
 	}
 
-	for (i = 0; i < numsamps; i++)
+	for (int i = 0; i < IT_SAMPLE_MAX; i++)
 	{
 		if (!ITSamples[i])
 			continue;
@@ -504,7 +498,6 @@ cleanup:
 
 	free(ITPatterns);
 	ITPatterns = NULL;
-	return ret;
 }
 
 int ITMix()

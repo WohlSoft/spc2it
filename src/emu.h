@@ -17,7 +17,7 @@ extern void (*SPC_Write_DSP_Hook)(u8);
 
 #define SPCUpdateRate 100
 
-s32 SPCInit(char *);
+s32 SPCInit(const char *);
 void SPCAddWriteDSPCallback(void (*ToAddCallback)(u8));
 
 #endif
